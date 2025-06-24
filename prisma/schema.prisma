@@ -1,0 +1,45 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model QuestionType {
+  id             Int       @id @default(autoincrement())
+  name           String    @unique                 // ex: "Texte", "Image à deviner"
+  description    String
+  gameModes      String[]                          // ex: ["RAPIDITE", "TOUTES_LES_EQUIPES"]
+  answerModes    String[]                          // ex: ["QCM", "CASH"]
+  requiresImage  Boolean   @default(false)
+  requiresTheme  Boolean   @default(false)
+  defaultPrompt  String?                           // question par défaut si vide
+  questions      Question[]
+}
+
+model Question {
+  id            Int           @id @default(autoincrement())
+  type          QuestionType  @relation(fields: [typeId], references: [id])
+  typeId        Int
+  theme         String?                                // requis côté code si `requiresTheme = true`
+  imageUrl      String?                                // requis côté code si `requiresImage = true`
+  question      String?                                // peut être vide si `defaultPrompt` est utilisé
+  answerDetail  String?                                // explication optionnelle
+  answers       Answer[]
+}
+
+model Answer {
+  id          Int       @id @default(autoincrement())
+  question    Question  @relation(fields: [questionId], references: [id])
+  questionId  Int
+  text        String
+  isCorrect   Boolean   @default(false)
+}
