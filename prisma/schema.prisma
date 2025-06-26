@@ -23,6 +23,7 @@ model QuestionType {
   requiresTheme  Boolean   @default(false)
   defaultPrompt  String?                           // question par défaut si vide
   questions      Question[]
+  userId         String?
 }
 
 model Question {
@@ -34,6 +35,7 @@ model Question {
   question      String?                                // peut être vide si `defaultPrompt` est utilisé
   answerDetail  String?                                // explication optionnelle
   answers       Answer[]
+  userId        String?
 }
 
 model Answer {
