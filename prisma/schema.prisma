@@ -4,6 +4,14 @@
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
+enum QuestionType {
+    TEXT
+    IMAGE
+    VIDEO
+    AUDIO
+    EMOJI
+}
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,27 +21,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model QuestionType {
+model Theme {
   id             Int       @id @default(autoincrement())
-  name           String    @unique                 // ex: "Texte", "Image à deviner"
-  description    String
-  gameModes      String[]                          // ex: ["RAPIDITE", "TOUTES_LES_EQUIPES"]
-  answerModes    String[]                          // ex: ["QCM", "CASH"]
-  requiresImage  Boolean   @default(false)
-  requiresTheme  Boolean   @default(false)
-  defaultPrompt  String?                           // question par défaut si vide
+  name           String    @unique               
   questions      Question[]
-  userId         String?
 }
 
 model Question {
   id            Int           @id @default(autoincrement())
-  type          QuestionType  @relation(fields: [typeId], references: [id])
-  typeId        Int
-  theme         String?                                // requis côté code si `requiresTheme = true`
-  imageUrl      String?                                // requis côté code si `requiresImage = true`
-  question      String?                                // peut être vide si `defaultPrompt` est utilisé
-  answerDetail  String?                                // explication optionnelle
+  question      String
+  type          QuestionType
+  theme         Theme         @relation(fields: [themeId], references: [id])
+  themeId       Int
+  imageUrl      String?                                
+  videoUrl      String?
+  audioUrl      String?
+  emojis        String?
+  answerDetail  String?                               
   answers       Answer[]
   userId        String?
 }

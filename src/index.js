@@ -4,7 +4,11 @@ const fileUpload = require('express-fileupload');
 const cloudinary = require('./config/cloudinary'); // chemin vers ton fichier config
 const prisma = require('./config/prismaClient');
 const fs = require('fs');
-const { questionTypeSchema } = require('./validators/index');
+const {
+    themeSchema,
+    questionWithAnswersSchema,
+    questionSchema,
+} = require('./validators/index');
 
 const app = express();
 
@@ -18,8 +22,8 @@ app.use(
 
 // ===========> Routes
 
-app.post('/question-type', async (req, res) => {
-    const result = questionTypeSchema.safeParse(req.body);
+app.post('/theme', async (req, res) => {
+    const result = themeSchema.safeParse(req.body);
 
     if (!result.success) {
         return res.status(400).json({ error: result.error.format() });
@@ -28,51 +32,71 @@ app.post('/question-type', async (req, res) => {
     const data = result.data;
 
     try {
-        const questionType = await prisma.questionType.create({ data });
-        res.status(201).json(questionType);
+        const theme = await prisma.theme.create({ data });
+        res.status(201).json(theme);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-app.get('/question-type', async (req, res) => {
+app.get('/theme', async (req, res) => {
     try {
-        const questionType = await prisma.questionType.findMany();
-        res.status(201).json(questionType);
+        const theme = await prisma.theme.findMany();
+        res.status(201).json(theme);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
 app.post('/question', async (req, res) => {
-    try {
-        const { content } = req.body;
+    const questionData = req.body;
+    const uploadImage = req.files?.image;
 
-        if (!req.files || !req.files.image) {
-            return res.status(400).json({ error: 'Image file is required' });
-        }
+    const result = questionSchema.safeParse(questionData);
 
-        const imageFile = req.files.image;
+    if (!result.success) {
+        return res.status(400).json({ error: result.error.format() });
+    }
 
-        // Upload sur Cloudinary
-        const result = await cloudinary.uploader.upload(
-            imageFile.tempFilePath,
-            {
-                folder: 'qquizz/questions',
-            }
-        );
+    const data = result.data;
+    let imageUrl = data.imageUrl;
 
-        // Supprimer fichier temporaire
-        fs.unlink(imageFile.tempFilePath, (err) => {
-            if (err) console.error('Failed to delete temp file:', err);
+    if (data.type === 'IMAGE' && !uploadImage && !data.imageUrl) {
+        return res.status(400).json({
+            error: 'Une image ou une URL est requise pour ce type de question.',
         });
+    }
 
-        // Créer la question avec l'URL de l'image
+    if (data.type === 'IMAGE' && uploadImage) {
+        try {
+            const resultCloudinary = await cloudinary.uploader.upload(
+                uploadImage.tempFilePath,
+                {
+                    folder: 'qquizz/questions',
+                }
+            );
+
+            await fs.unlink(uploadImage.tempFilePath);
+
+            imageUrl = resultCloudinary.secure_url;
+        } catch (uploadError) {
+            return res
+                .status(500)
+                .json({ error: "Erreur lors de l'upload de l'image." });
+        }
+    }
+
+    // Créer la question avec l'URL de l'image
+    try {
         const question = await prisma.question.create({
             data: {
-                content,
-                imageUrl: result.secure_url,
+                ...data,
+                imageUrl,
+                answers: {
+                    create: data.answers,
+                },
             },
+            include: { answers: true },
         });
 
         res.status(201).json(question);
