@@ -23,7 +23,8 @@ datasource db {
 
 model Theme {
   id             Int       @id @default(autoincrement())
-  name           String    @unique               
+  name           String    @unique    
+  smiley         String    @unique
   questions      Question[]
 }
 
@@ -31,8 +32,8 @@ model Question {
   id            Int           @id @default(autoincrement())
   question      String
   type          QuestionType
-  theme         Theme         @relation(fields: [themeId], references: [id])
-  themeId       Int
+  theme         Theme?         @relation(fields: [themeId], references: [id], onDelete: SetNull)
+  themeId       Int?
   imageUrl      String?                                
   videoUrl      String?
   audioUrl      String?
@@ -44,7 +45,7 @@ model Question {
 
 model Answer {
   id          Int       @id @default(autoincrement())
-  question    Question  @relation(fields: [questionId], references: [id])
+  question    Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
   questionId  Int
   text        String
   isCorrect   Boolean   @default(false)

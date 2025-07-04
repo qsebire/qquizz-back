@@ -1,7 +1,17 @@
 const { z } = require('zod');
+const emojiRegex = require('emoji-regex');
+
+const regexEmoji = emojiRegex();
 
 const themeSchema = z.object({
     name: z.string().min(1, { message: 'Le nom du thème est requis.' }),
+    smiley: z
+        .string()
+        .min(1, { message: 'Un emoji est requis.' })
+        .regex(regexEmoji, {
+            message:
+                'Le champ doit contenir uniquement un emoji unicode valide.',
+        }),
 });
 
 const answerSchema = z.object({
