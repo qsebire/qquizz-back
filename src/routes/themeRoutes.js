@@ -30,4 +30,32 @@ router.get('/all', async (req, res) => {
     }
 });
 
+router.delete('/:id', async (req, res) => {
+    const themeId = Number(req.params.id);
+
+    if (!Number.isInteger(themeId) || themeId <= 0) {
+        return res
+            .status(400)
+            .json({ error: 'ID invalide. Il doit être un entier positif.' });
+    }
+
+    try {
+        const theme = await prisma.theme.findUnique({
+            where: { id: themeId },
+        });
+
+        if (!theme) {
+            return res.status(404).json({ error: 'Thème introuvable.' });
+        }
+
+        const deletedTheme = await prisma.theme.delete({
+            where: { id: themeId },
+        });
+
+        res.status(200).json(deletedTheme);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;
