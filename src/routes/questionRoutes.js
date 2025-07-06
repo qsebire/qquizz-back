@@ -44,9 +44,9 @@ router.post('/', async (req, res) => {
     }
 
     const data = result.data;
-    let imageUrl = data.imageUrl;
+    let mediaUrl = data.mediaUrl;
 
-    if (data.type === 'IMAGE' && !uploadImage && !data.imageUrl) {
+    if (data.type === 'IMAGE' && !uploadImage && !data.mediaUrl) {
         return res.status(400).json({
             success: false,
             error: 'Une image ou une URL est requise pour ce type de question.',
@@ -55,13 +55,13 @@ router.post('/', async (req, res) => {
 
     try {
         if (data.type === 'IMAGE' && uploadImage) {
-            imageUrl = await uploadImageToCloudinary(uploadImage);
+            mediaUrl = await uploadImageToCloudinary(uploadImage);
         }
 
         const question = await prisma.question.create({
             data: {
                 ...data,
-                imageUrl,
+                mediaUrl,
                 answers: {
                     create: data.answers,
                 },

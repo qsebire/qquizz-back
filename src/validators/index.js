@@ -30,6 +30,7 @@ const baseQuestion = {
     question: z.string().min(1, { message: 'La question est requise.' }),
     themeId: z.number().int().positive(),
     userId: z.string().optional(),
+    difficulty: z.union([z.literal(1), z.literal(2), z.literal(3)]),
     answers: answersSchema,
     answerDetail: z.string().optional(),
 };
@@ -37,53 +38,27 @@ const baseQuestion = {
 const questionText = z.object({
     ...baseQuestion,
     type: z.literal('TEXT'),
-    imageUrl: z.undefined(),
-    videoUrl: z.undefined(),
-    audioUrl: z.undefined(),
+    mediaUrl: z.undefined(),
     emojis: z.undefined(),
 });
 
-const questionImage = z.object({
+const questionMedia = z.object({
     ...baseQuestion,
-    type: z.literal('IMAGE'),
-    imageUrl: z.string().url().optional(),
-    videoUrl: z.undefined(),
-    audioUrl: z.undefined(),
-    emojis: z.undefined(),
-});
-
-const questionVideo = z.object({
-    ...baseQuestion,
-    type: z.literal('VIDEO'),
-    imageUrl: z.undefined(),
-    videoUrl: z.string().url(),
-    audioUrl: z.undefined(),
-    emojis: z.undefined(),
-});
-
-const questionAudio = z.object({
-    ...baseQuestion,
-    type: z.literal('AUDIO'),
-    imageUrl: z.undefined(),
-    videoUrl: z.undefined(),
-    audioUrl: z.string().url(),
+    type: z.enum(['IMAGE', 'VIDEO', 'AUDIO']),
+    mediaUrl: z.string().url().optional(),
     emojis: z.undefined(),
 });
 
 const questionEmoji = z.object({
     ...baseQuestion,
     type: z.literal('EMOJI'),
-    imageUrl: z.undefined(),
-    videoUrl: z.undefined(),
-    audioUrl: z.undefined(),
+    mediaUrl: z.undefined(),
     emojis: z.string().min(1, { message: 'Au moins un emoji est requis.' }),
 });
 
 const questionSchema = z.discriminatedUnion('type', [
     questionText,
-    questionImage,
-    questionVideo,
-    questionAudio,
+    questionMedia,
     questionEmoji,
 ]);
 
