@@ -1,5 +1,6 @@
 const { z } = require('zod');
 const emojiRegex = require('emoji-regex');
+const { difficulties } = require('../../data/shared/quizzModes');
 
 const regexEmoji = emojiRegex();
 
@@ -26,11 +27,14 @@ const answersSchema = z
         message: 'Une seule réponse doit être correcte.',
     });
 
+const validLevels = difficulties.map((difficulty) => difficulty.level);
+const difficultySchema = z.union(validLevels.map(z.literal));
+
 const baseQuestion = {
     question: z.string().min(1, { message: 'La question est requise.' }),
     themeId: z.number().int().positive(),
     userId: z.string().optional(),
-    difficulty: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+    difficulty: difficultySchema,
     answers: answersSchema,
     answerDetail: z.string().optional(),
 };
