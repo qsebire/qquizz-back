@@ -12,6 +12,13 @@ enum QuestionType {
     EMOJI
 }
 
+enum AnswerMode {
+    CASH
+    MCQ
+    EITHER_ONE
+    TRUE_FALSE
+}
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -26,20 +33,25 @@ model Theme {
   name           String    @unique    
   smiley         String    @unique
   questions      Question[]
+  createdAt      DateTime  @default(now())
+  updateAt       DateTime  @updatedAt @default(now())
 }
 
 model Question {
-  id            Int           @id @default(autoincrement())
-  question      String
-  type          QuestionType
-  theme         Theme?        @relation(fields: [themeId], references: [id], onDelete: SetNull)
-  themeId       Int?
-  difficulty    Int           @default(1)
-  mediaUrl      String?                                
-  emojis        String?
-  answerDetail  String?                               
-  answers       Answer[]
-  userId        String?
+  id                  Int           @id @default(autoincrement())
+  question            String
+  type                QuestionType
+  theme               Theme?        @relation(fields: [themeId], references: [id], onDelete: SetNull)
+  themeId             Int?
+  difficulty          Int           @default(1)
+  mediaUrl            String?                                
+  emojis              String?
+  allowedAnswerMode   AnswerMode[]                            
+  answers             Answer[]
+  answerDetail        String?
+  userId              String?
+  createdAt           DateTime      @default(now())
+  updateAt            DateTime      @updatedAt @default(now())
 }
 
 model Answer {

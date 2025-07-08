@@ -37,6 +37,9 @@ const baseQuestion = {
     difficulty: difficultySchema,
     answers: answersSchema,
     answerDetail: z.string().optional(),
+    allowedAnswerModes: z.array(
+        z.enum(['CASH', 'MCQ', 'EITHER_ONE', 'TRUE_FALSE'])
+    ),
 };
 
 const questionText = z.object({
@@ -60,11 +63,63 @@ const questionEmoji = z.object({
     emojis: z.string().min(1, { message: 'Au moins un emoji est requis.' }),
 });
 
-const questionSchema = z.discriminatedUnion('type', [
-    questionText,
-    questionMedia,
-    questionEmoji,
-]);
+const questionSchema = z
+    .discriminatedUnion('type', [questionText, questionMedia, questionEmoji])
+    .superRefine((data, ctx) => {
+        const answers = data.answers;
+        const modes = data.allowedAnswerModes;
+
+        if (modes.includes('TRUE_FALSE')) {
+            // TRUE_FALSE only accepted "Vrai" and "Faux"
+            const validTrueFalse = ['Vrai', 'Faux'];
+            const validAnswers = answers.filter((answer) =>
+                validTrueFalse.includes(answer.text)
+            );
+
+            if (validAnswers.length !== 2) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message:
+                        'En mode Vrai ou Faux, les réponses doivent être "Vrai" ou "Faux".',
+                    path: ['answers'],
+                });
+            }
+
+            // if TRUE_FALSE mode selected, it must be the only answerMode
+            if (modes.length > 1) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message:
+                        'Le mode Vrai ou Faux ne peut être combiné a un autre mode de réponse.',
+                    path: ['allowedAnswerModes'],
+                });
+            }
+        }
+
+        // If only CASH mode is selected, only one answer is accepted
+        if (modes.length === 1 && modes[0] === 'CASH') {
+            if (answers.length > 1) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message:
+                        'En mode Question libre, une seule réponse doit être fournie.',
+                    path: ['answers'],
+                });
+            }
+        }
+
+        // With MCQ and/or EITHER_ONE modes, minimum two answers
+        if (modes.includes('MCQ') || modes.includes('EITHER_ONE')) {
+            if (answers.length < 2) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message:
+                        "En mode QCM ou L'un ou l'autre, au moins deux réponses doivent être proposées.",
+                    path: ['answers'],
+                });
+            }
+        }
+    });
 
 module.exports = {
     themeSchema,
