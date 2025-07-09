@@ -15,6 +15,10 @@ const themeSchema = z.object({
         }),
 });
 
+const subThemeSchema = z.object({
+    name: z.string().min(1, { message: 'Le nom du thème est requis.' }),
+});
+
 const answerSchema = z.object({
     text: z.string().min(1, { message: 'La réponse est requise.' }),
     isCorrect: z.boolean(),
@@ -33,6 +37,7 @@ const difficultySchema = z.union(validLevels.map(z.literal));
 const baseQuestion = {
     question: z.string().min(1, { message: 'La question est requise.' }),
     themeId: z.number().int().positive(),
+    subThemeID: z.number().int().positive().optional(),
     userId: z.string().optional(),
     difficulty: difficultySchema,
     answers: answersSchema,
@@ -123,6 +128,7 @@ const questionSchema = z
 
 module.exports = {
     themeSchema,
+    subThemeSchema,
     questionSchema,
     answerSchema,
 };

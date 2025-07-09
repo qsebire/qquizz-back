@@ -4,6 +4,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const themeRoutes = require('./routes/themeRoutes');
+const subThemeRoutes = require('./routes/subThemeRoutes');
 const questionRoutes = require('./routes/questionRoutes');
 const { URL_FRONTEND } = require('../data/general');
 
@@ -20,6 +21,7 @@ app.use(
 
 // Routes
 app.use('/theme', themeRoutes);
+app.use('/subtheme', subThemeRoutes);
 app.use('/question', questionRoutes);
 
 const port = process.env.PORT || 3000;
