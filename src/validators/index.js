@@ -37,7 +37,7 @@ const difficultySchema = z.union(validLevels.map(z.literal));
 const baseQuestion = {
     question: z.string().min(1, { message: 'La question est requise.' }),
     themeId: z.number().int().positive(),
-    subThemeID: z.number().int().positive().optional(),
+    subThemeId: z.number().int().positive().optional(),
     userId: z.string().optional(),
     difficulty: difficultySchema,
     answers: answersSchema,
