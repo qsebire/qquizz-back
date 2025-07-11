@@ -56,7 +56,7 @@ model Question {
   difficulty          Int           @default(1)
   mediaUrl            String?                                
   emojis              String?
-  allowedAnswerMode   AnswerMode[]                            
+  allowedAnswerModes  AnswerMode[]                            
   answers             Answer[]
   answerDetail        String?
   userId              String?

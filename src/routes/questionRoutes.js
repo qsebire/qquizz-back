@@ -1,41 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const fileUpload = require('express-fileupload');
 const prisma = require('../config/prismaClient');
-const fs = require('fs/promises');
-const cloudinary = require('../config/cloudinary');
 const { questionSchema } = require('../validators');
-
-router.use(
-    fileUpload({
-        useTempFiles: true,
-        tempFileDir: './tmp/',
-        limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
-        abortOnLimit: true,
-        safeFileNames: true,
-    })
-);
-
-async function uploadImageToCloudinary(file) {
-    try {
-        const resultCloudinary = await cloudinary.uploader.upload(
-            file.tempFilePath,
-            {
-                folder: 'qquizz/questions',
-            }
-        );
-        await fs.unlink(file.tempFilePath);
-        return resultCloudinary.secure_url;
-    } catch (err) {
-        throw new Error("Erreur lors de l'upload de l'image.");
-    }
-}
 
 router.post('/', async (req, res) => {
     const questionData = req.body;
-    const uploadImage = req.files?.image;
 
+    console.log(questionData);
     const result = questionSchema.safeParse(questionData);
+    console.log(result.error?.format());
 
     if (!result.success) {
         return res
@@ -43,27 +16,22 @@ router.post('/', async (req, res) => {
             .json({ success: false, errors: result.error.format() });
     }
 
-    const data = result.data;
-    let mediaUrl = data.mediaUrl;
-
-    if (data.type === 'IMAGE' && !uploadImage && !data.mediaUrl) {
-        return res.status(400).json({
-            success: false,
-            error: 'Une image ou une URL est requise pour ce type de question.',
-        });
-    }
+    const { themeId, subThemeId, answers, ...restOfData } = result.data;
 
     try {
-        if (data.type === 'IMAGE' && uploadImage) {
-            mediaUrl = await uploadImageToCloudinary(uploadImage);
-        }
-
         const question = await prisma.question.create({
             data: {
-                ...data,
-                mediaUrl,
+                ...restOfData,
+                theme: {
+                    connect: { id: themeId },
+                },
+                ...(subThemeId && {
+                    subTheme: {
+                        connect: { id: subThemeId },
+                    },
+                }),
                 answers: {
-                    create: data.answers,
+                    create: answers,
                 },
             },
             include: { answers: true },
@@ -72,6 +40,34 @@ router.post('/', async (req, res) => {
         res.status(201).json({ success: true, question });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+router.get('/random', async (req, res) => {
+    try {
+        const count = await prisma.question.count();
+
+        if (count === 0) {
+            return res
+                .status(404)
+                .json({ message: 'Aucune question trouvée.' });
+        }
+
+        const skip = Math.floor(Math.random() * count);
+
+        const randomQuestion = await prisma.question.findMany({
+            skip: skip,
+            take: 1,
+            include: {
+                theme: true,
+                subtheme: true,
+                answers: true,
+            },
+        });
+
+        res.status(200).json(randomQuestion[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
