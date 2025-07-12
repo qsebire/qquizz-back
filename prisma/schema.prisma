@@ -51,8 +51,8 @@ model Question {
   type                QuestionType
   theme               Theme?        @relation(fields: [themeId], references: [id], onDelete: SetNull)
   themeId             Int?
-  subtheme            SubTheme?     @relation(fields: [subthemeId], references: [id], onDelete: SetNull)
-  subthemeId          Int?
+  subTheme            SubTheme?     @relation(fields: [subThemeId], references: [id], onDelete: SetNull)
+  subThemeId          Int?
   difficulty          Int           @default(1)
   mediaUrl            String?                                
   emojis              String?

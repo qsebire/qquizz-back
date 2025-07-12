@@ -21,7 +21,7 @@ app.use(
 
 // Routes
 app.use('/theme', themeRoutes);
-app.use('/subtheme', subThemeRoutes);
+app.use('/sub-theme', subThemeRoutes);
 app.use('/question', questionRoutes);
 
 const port = process.env.PORT || 3000;

@@ -6,9 +6,7 @@ const { questionSchema } = require('../validators');
 router.post('/', async (req, res) => {
     const questionData = req.body;
 
-    console.log(questionData);
     const result = questionSchema.safeParse(questionData);
-    console.log(result.error?.format());
 
     if (!result.success) {
         return res
@@ -60,7 +58,7 @@ router.get('/random', async (req, res) => {
             take: 1,
             include: {
                 theme: true,
-                subtheme: true,
+                subTheme: true,
                 answers: true,
             },
         });
