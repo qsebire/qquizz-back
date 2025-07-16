@@ -43,19 +43,44 @@ router.post('/', async (req, res) => {
 
 router.get('/random', async (req, res) => {
     try {
-        const count = await prisma.question.count();
+        const askedIdsParam = req.query.askedIds;
+        let askedQuestionIds = [];
 
-        if (count === 0) {
-            return res
-                .status(404)
-                .json({ message: 'Aucune question trouvée.' });
+        if (askedIdsParam) {
+            askedQuestionIds = askedIdsParam
+                .split(',')
+                .map((id) => parseInt(id.trim(), 10));
         }
 
-        const skip = Math.floor(Math.random() * count);
+        const availableQuestionIds = await prisma.question.findMany({
+            where: {
+                id: {
+                    notIn: askedQuestionIds,
+                },
+            },
+            select: {
+                id: true,
+            },
+        });
 
-        const randomQuestion = await prisma.question.findMany({
-            skip: skip,
-            take: 1,
+        if (availableQuestionIds.length === 0) {
+            return res
+                .status(404)
+                .json({
+                    message:
+                        "Aucune question disponible. Toutes les questions ont été posées ou il n'y en a pas.",
+                });
+        }
+
+        const randomIndex = Math.floor(
+            Math.random() * availableQuestionIds.length
+        );
+        const selectedQuestionId = availableQuestionIds[randomIndex].id;
+
+        const randomQuestion = await prisma.question.findUnique({
+            where: {
+                id: selectedQuestionId,
+            },
             include: {
                 theme: true,
                 subTheme: true,
