@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const prisma = require('../config/prismaClient');
 const { questionSchema } = require('../validators');
+const { stringCommasToArray } = require('../../utils/hooks');
 
 router.post('/', async (req, res) => {
     const questionData = req.body;
@@ -41,21 +42,38 @@ router.post('/', async (req, res) => {
     }
 });
 
-router.get('/random', async (req, res) => {
+router.get('/', async (req, res) => {
     try {
-        const askedIdsParam = req.query.askedIds;
-        let askedQuestionIds = [];
+        const {
+            nbr,
+            askedIds,
+            themeId,
+            subThemeId,
+            answerModes,
+            difficulties,
+        } = req.query;
 
-        if (askedIdsParam) {
-            askedQuestionIds = askedIdsParam
-                .split(',')
-                .map((id) => parseInt(id.trim(), 10));
-        }
+        const nbrQuestions = nbr | 1;
+        const askedQuestionIds = stringCommasToArray(askedIds);
+        const answerModesArr = stringCommasToArray(answerModes);
+        const difficultiesArr = stringCommasToArray(difficulties);
 
         const availableQuestionIds = await prisma.question.findMany({
             where: {
                 id: {
                     notIn: askedQuestionIds,
+                },
+                themeId: {
+                    equals: themeId,
+                },
+                subThemeId: {
+                    equals: subThemeId,
+                },
+                allowedAnswerModes: {
+                    hasSome: answerModesArr,
+                },
+                difficulty: {
+                    in: difficultiesArr,
                 },
             },
             select: {
@@ -63,13 +81,11 @@ router.get('/random', async (req, res) => {
             },
         });
 
-        if (availableQuestionIds.length === 0) {
-            return res
-                .status(404)
-                .json({
-                    message:
-                        "Aucune question disponible. Toutes les questions ont été posées ou il n'y en a pas.",
-                });
+        if (availableQuestionIds.length < nbrQuestions) {
+            return res.status(404).json({
+                message:
+                    "Pas assez de questions disponibles. Toutes les questions ont été posées ou il n'y en a pas.",
+            });
         }
 
         const randomIndex = Math.floor(
@@ -88,7 +104,7 @@ router.get('/random', async (req, res) => {
             },
         });
 
-        res.status(200).json(randomQuestion[0]);
+        res.status(200).json(randomQuestion);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
